@@ -10,22 +10,23 @@ import ntpath
 urls = [
     "https://localhost:7247/200response",
     "https://localhost:7247/400simulation",
+    "https://localhost:7247/500simulation",
     "https://localhost:7247/noServerResponseSimulation",
     ]
 
 def run() -> None:
-    asyncio.run(runWebsiteRequest())
-
-async def runWebsiteRequest() -> None:
-    websiteResults = []
-    timeout = aiohttp.ClientTimeout(total=2)
-    async with aiohttp.ClientSession(timeout=timeout) as clientSession:
-        websiteResults = await getAllWebsiteResults(clientSession, urls)
-
+    websiteResults = asyncio.run(runWebsiteRequest())
     filePath = generateResultFile(websiteResults)
     sendFileToCloudStorage(filePath)
     handleWebsiteResults(websiteResults)
     displayResults(websiteResults)
+
+async def runWebsiteRequest() -> List[WebsiteResult]:
+    timeout = aiohttp.ClientTimeout(total=4)
+    async with aiohttp.ClientSession(timeout=timeout) as clientSession:
+        websiteResult = await getAllWebsiteResults(clientSession, urls)
+        await clientSession.close()
+        return websiteResult
 
 async def fetch(clientSession: aiohttp.ClientSession, url: str) -> WebsiteResult:
     try:
